@@ -16,3 +16,4 @@ wasmgen = { path = "../lib-wasmgen" }
 ir = { path = "../lib-ir" }
 backend-wasm = { path = "../lib-backend-wasm" }
 wasm-bindgen = "0.2"
+serde = "1.0"
