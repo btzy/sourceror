@@ -2,6 +2,7 @@
 members = [
     "source-compiler",
     "lib-projstd",
+    "lib-asttoir",
     "lib-wasmgen",
     "lib-ir",
     "lib-backend-wasm",
