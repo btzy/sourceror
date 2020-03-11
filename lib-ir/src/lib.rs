@@ -40,7 +40,7 @@ pub struct Program {
     pub entry_point: FuncIdx, // index of function to run when the program is started
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum VarType {
     Any, // used if we don't know the type contained in the variable.  Most of the time we will use this.  Generates a variant in the output program unless it gets optimised away.
     Unassigned, // unassigned (due to hoisting)
@@ -56,6 +56,7 @@ impl Default for VarType {
         VarType::Any
     }
 }
+
 impl VarType {
     pub fn tag(self) -> i32 {
         match self {
