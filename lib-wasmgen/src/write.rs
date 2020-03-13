@@ -13,6 +13,10 @@ pub struct WasmImportBuilderModule {
     num_globals: u32,
 }
 
+pub trait Writer {
+    fn build(self) -> (FuncType, Box<[u8]>);
+}
+
 /**
  * To make a new function:
  * 1. Call register_func(functype) to get a typeidx and funcidx for the new function

@@ -8,6 +8,7 @@ use std::vec::Vec;
 
 pub mod codewriter;
 pub mod serialize;
+pub mod typewriter;
 pub mod write;
 pub use codewriter::*;
 pub use serialize::*;

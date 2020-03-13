@@ -26,10 +26,10 @@ impl ExprBuilder {
             bytecode: self.bytecode.into_boxed_slice(),
         }
     }
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.bytecode.len()
     }
-    fn write_to_slice(self, out: &mut [u8]) {
+    pub fn write_to_slice(self, out: &mut [u8]) {
         out.copy_from_slice(self.bytecode.as_slice());
     }
 }
@@ -60,14 +60,6 @@ impl CodeBuilder {
             expr: Default::default(),
         }
     }
-    pub fn build(self) -> (FuncType, Box<[u8]>) {
-        let mut receiver = Vec::<u8>::new();
-        serialize_locals(self.locals_builder.locals, &mut receiver);
-        let locals_len = receiver.len();
-        receiver.resize_with(locals_len + self.expr.len(), Default::default);
-        self.expr.write_to_slice(&mut receiver[locals_len..]);
-        (self.functype, receiver.into_boxed_slice())
-    }
     pub fn split(&mut self) -> (&mut LocalsManager, &mut ExprBuilder) {
         (&mut self.locals_builder, &mut self.expr)
     }
@@ -79,7 +71,18 @@ impl CodeBuilder {
     }
 }
 
-fn serialize_locals(locals: Vec<ValType>, receiver: &mut Vec<u8>) {
+impl Writer for CodeBuilder {
+    fn build(self) -> (FuncType, Box<[u8]>) {
+        let mut receiver = Vec::<u8>::new();
+        serialize_locals(self.locals_builder.locals, &mut receiver);
+        let locals_len = receiver.len();
+        receiver.resize_with(locals_len + self.expr.len(), Default::default);
+        self.expr.write_to_slice(&mut receiver[locals_len..]);
+        (self.functype, receiver.into_boxed_slice())
+    }
+}
+
+pub fn serialize_locals(locals: Vec<ValType>, receiver: &mut Vec<u8>) {
     // special serialization by merging adjacent same-typed locals as specified by wasm binary format
     let counted_vec = locals
         .into_iter()
