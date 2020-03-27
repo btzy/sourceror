@@ -28,8 +28,10 @@ pub fn populate_func(ast: serde_json::Value) -> ir::Func {
     let func: ir::Func = ir::Func {
         params: populate_func_params(ast.clone()),
         result: populate_func_result(ast.clone()),
-        locals: populate_func_locals(ast.clone()),
-        statements: populate_func_statements(ast.clone()),
+        block: ir::Block{
+            locals: populate_func_locals(ast.clone()),
+            statements: populate_func_statements(ast.clone()),
+        },
         signature_filter: vec![],
     };
     return func;
@@ -64,7 +66,7 @@ pub fn populate_func_locals(ast: serde_json::Value) -> Vec<ir::VarType> {
     return func_locals;
 }
 
-pub fn populate_func_statements(ast: serde_json::Value) -> ir::Block {
+pub fn populate_func_statements(ast: serde_json::Value) -> Vec<ir::Statement> {
     // Doesn't support nested functions
     // Statements are either Assign, Return, If, Expr, Void
     // type Expression = "ThisExpression" || "Identifier" || "Literal" ||

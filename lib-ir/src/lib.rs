@@ -90,7 +90,7 @@ pub enum ImportValType {
     String, // compiles into i32(ptr) parameter, the host should look into our linear memory to figure out the length and the actual string content.
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Block {
     pub locals: Vec<VarType>, // list of local variables
     pub statements: Vec<Statement>,
