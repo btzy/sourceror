@@ -1,0 +1,17 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\lib-asttoir",
+    "\\lib-asttoir\\src",
+    "\\lib-wasmgen",
+    "\\lib-wasmgen\\src",
+    "\\source-compiler",
+    "\\source-compiler\\src",
+    "\\wasm-test-harness",
+    "\\wasm-test-harness\\src",
+    "\\wasm-test-local",
+    "\\wasm-test-local\\src"
+  ],
+  "SelectedNode": "\\lib-asttoir\\src\\lib.rs",
+  "PreviewInSolutionExplorer": false
+}

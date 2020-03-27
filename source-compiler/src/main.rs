@@ -6,6 +6,7 @@ use backend_wasm;
 
 fn main() {
     let contents = asttoir::read_from_file(None);
+    println!("{:#?}", contents);
     let func = asttoir::populate_func(contents);
     println!("{:#?}", func);
     /*let ir_program = ir::Program::new();
