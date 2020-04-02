@@ -35,7 +35,7 @@ pub type FuncIdx = usize;
 
 pub struct Program {
     pub struct_types: Vec<Box<[VarType]>>, // stores the list of fields of all structs (i.e. objects) in the program (indexed with typeidx)
-    pub imports: Vec<Import>,              // list of imported functions
+    pub imports: Box<[Import]>,              // list of imported functions
     pub funcs: Vec<Func>, // list of functions (some will be pre-generated for the pre-declared operators, e.g. + - * / % === and more)
     pub globals: Vec<VarType>, // list of global variables
     pub entry_point: FuncIdx, // index of function to run when the program is started
@@ -93,7 +93,7 @@ pub enum ImportValType {
 #[derive(Default)]
 pub struct Block {
     pub locals: Vec<VarType>, // list of local variables
-    pub statements: Vec<Statement>,
+    pub exprs: Vec<Expr>,
 }
 
 pub struct Func {
@@ -110,34 +110,8 @@ pub struct Func {
                                                                    // (because there is no use for a self-reference)
 }
 
-pub enum Statement {
-    Assign {
-        target: TargetExpr,
-        expr: Expr,
-    }, // Assigment statement (can assign from specific type to Any, but not vice versa)
-    Return {
-        expr: Expr,
-    }, // Return statmenent,
-    // todo!: Should If be an Expr instead of a separate statement?  (Wasm if-statements can return a value.)
-    // `cond.vartype` can be either Any or Boolean.  If cond.vartype is Any, then we will emit a runtime type check.
-    If {
-        cond: Expr,
-        true_block: Block,
-        false_block: Block,
-    }, // If statement
-    Block {
-        block: Block,
-    },
-    Expr {
-        expr: Expr,
-    }, // Expression statement
-    Void {
-        expr_kind: ExprKind,
-    }, // Statement that never returns (e.g. a trap, or infinite loop)
-}
-
 pub struct Expr {
-    pub vartype: VarType, // the type set that this Expr is guaranteed to evaluate to (if unknown, just use ValType::Any).  Users of this expression will generate code that only works on this type.  It may also affect the memory layout of the expr.
+    pub vartype: Option<VarType>, // the type set that this Expr is guaranteed to evaluate to (if unknown, just use ValType::Any).  Users of this expression will generate code that only works on this type.  It may also affect the memory layout of the expr.
     pub kind: ExprKind,   // the variant kind of this expression
 }
 
@@ -201,7 +175,17 @@ pub enum ExprKind {
         cond: Box<Expr>,
         true_expr: Box<Expr>,
         false_expr: Box<Expr>,
-    }, // a ? b : c
+    }, // a ? b : c, // `cond.vartype` can be either Any or Boolean.  If cond.vartype is Any, then we will emit a runtime type check.
+    Block {
+        block: Block,
+    }, // returns the value of its last expression
+    Assign {
+        target: TargetExpr,
+        expr: Box<Expr>,
+    }, // Assigment statement (can assign from specific type to Any, but not vice versa). Expression returns undefined.
+    Return {
+        expr: Box<Expr>,
+    }, // Return statmenent.  Expression never returns.
     Trap {
         code: u32,
         location: SourceLocation,
@@ -278,12 +262,12 @@ impl Program {
     // `funcs` will have pre-declared operators, but might also have other primitive functions (e.g. typed version of pre-declared operators).
     // The caller should only use the functions that match the funcidxs specified in the returned array of pre-declared operators.
     // Other things in the `funcs` array should not be used.
-    pub fn new() -> (Program, [FuncIdx; NUM_BUILTINS as usize]) {
-        let (funcs, builtin_funcidxs) = primfunc::make_pregenerated_funcs();
+    pub fn new(imports: Box<[Import]>) -> (Program, [FuncIdx; NUM_BUILTINS as usize]) {
+        let (funcs, builtin_funcidxs) = primfunc::make_pregenerated_funcs(imports.len());
         (
             Program {
                 struct_types: Default::default(),
-                imports: Default::default(),
+                imports: imports,
                 funcs: funcs,
                 globals: Default::default(),
                 entry_point: Default::default(),
@@ -308,10 +292,10 @@ impl Func {
 }
 
 impl Block {
-    pub fn from_statements(statements: Vec<Statement>) -> Self {
+    pub fn from_exprs(exprs: Vec<Expr>) -> Self {
         Self {
             locals: Vec::new(),
-            statements: statements,
+            exprs: exprs,
         }
     }
 }

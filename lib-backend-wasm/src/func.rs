@@ -537,35 +537,35 @@ fn encode_expr<H: HeapManager>(
     match &expr.kind {
         ir::ExprKind::PrimUndefined => {
             assert!(
-                expr.vartype == ir::VarType::Undefined,
+                expr.vartype == Some(ir::VarType::Undefined),
                 "ICE: IR->Wasm: PrimUndefined does not have type undefined"
             );
             // Don't do anything, because undefined is encoded as <nothing>
         }
         ir::ExprKind::PrimNumber { val } => {
             assert!(
-                expr.vartype == ir::VarType::Number,
+                expr.vartype == Some(ir::VarType::Number),
                 "ICE: IR->Wasm: PrimNumber does not have type number"
             );
             expr_builder.f64_const(*val);
         }
         ir::ExprKind::PrimBoolean { val } => {
             assert!(
-                expr.vartype == ir::VarType::Boolean,
+                expr.vartype == Some(ir::VarType::Boolean),
                 "ICE: IR->Wasm: PrimBoolean does not have type boolean"
             );
             expr_builder.i32_const(if *val { 1 } else { 0 });
         }
         ir::ExprKind::PrimString { val } => {
             assert!(
-                expr.vartype == ir::VarType::String,
+                expr.vartype == Some(ir::VarType::String),
                 "ICE: IR->Wasm: PrimString does not have type string"
             );
             expr_builder.i32_const(ctx.string_pool.lookup(val) as i32);
         }
         ir::ExprKind::PrimStructT { typeidx } => {
             assert!(
-                expr.vartype == ir::VarType::StructT { typeidx: *typeidx },
+                expr.vartype == Some( ir::VarType::StructT { typeidx: *typeidx }),
                 "ICE: IR->Wasm: PrimStructT does not have correct type, or typeidx is incorrect"
             );
             // todo!(Only store locals that are in scope at this point, instead of all of them.)
@@ -580,7 +580,7 @@ fn encode_expr<H: HeapManager>(
         }
         ir::ExprKind::PrimFunc { funcidx, closure } => {
             assert!(
-                expr.vartype == ir::VarType::Func,
+                expr.vartype == Some(ir::VarType::Func),
                 "ICE: IR->Wasm: PrimFunc does not have type func"
             );
             assert!(ctx.funcs[*funcidx].params.first().copied() == Some(closure.vartype)); // make sure the closure type given to us is indeed what the function will expect
@@ -595,7 +595,7 @@ fn encode_expr<H: HeapManager>(
         }
         ir::ExprKind::TypeOf { expr, expected } => {
             assert!(
-                expr.vartype == ir::VarType::Any,
+                expr.vartype == Some(ir::VarType::Any),
                 "ICE: IR->Wasm: LHS of TypeOf builtin should have static type Any"
             );
 
@@ -619,16 +619,20 @@ fn encode_expr<H: HeapManager>(
         }
         ir::ExprKind::VarName { source } => {
             // net wasm stack: [] -> [<source_vartype>]
-            encode_target_value(source, expr.vartype, ctx, mutctx, expr_builder);
+            if let Some(vartype) = expr.vartype {
+                encode_target_value(source, expr.vartype, ctx, mutctx, expr_builder);
+            } else {
+                panic!("variable name cannot be noreturn");
+			}
         }
         ir::ExprKind::PrimAppl { prim_inst, args } => {
-            encode_returnable_prim_inst(expr.vartype, *prim_inst, args, ctx, mutctx, expr_builder);
+            encode_prim_inst(expr.vartype, *prim_inst, args, ctx, mutctx, expr_builder);
         }
         ir::ExprKind::Appl { func, args } => {
-            encode_returnable_appl(expr.vartype, func, args, ctx, mutctx, expr_builder);
+            encode_appl(expr.vartype, func, args, ctx, mutctx, expr_builder);
         }
         ir::ExprKind::DirectAppl { funcidx, args } => {
-            encode_returnable_direct_appl(expr.vartype, *funcidx, args, ctx, mutctx, expr_builder);
+            encode_direct_appl(expr.vartype, *funcidx, args, ctx, mutctx, expr_builder);
         }
         ir::ExprKind::Conditional {
             cond,
